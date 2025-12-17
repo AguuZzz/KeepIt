@@ -1,15 +1,112 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import React, { useState, useEffect, forwardRef, useImperativeHandle } from 'react';
+import { View, Text, StyleSheet, Dimensions } from 'react-native';
 import * as MediaLibrary from 'expo-media-library';
+import { Gesture, GestureDetector } from 'react-native-gesture-handler';
+import Animated, {
+    useSharedValue,
+    useAnimatedStyle,
+    withSpring,
+    runOnJS,
+    interpolate,
+    Extrapolation,
+    withTiming
+} from 'react-native-reanimated';
 import ImageCard from './ImageCard';
+import { moveToTrash } from './Delete';
 
-const CardStack = () => {
+const SCREEN_WIDTH = Dimensions.get('window').width;
+const SWIPE_THRESHOLD = SCREEN_WIDTH * 0.25;
+
+const CardStack = forwardRef((props, ref) => {
     const [permissionResponse, requestPermission] = MediaLibrary.usePermissions();
     const [photos, setPhotos] = useState([]);
     const [currentIndex, setCurrentIndex] = useState(0);
     const [endCursor, setEndCursor] = useState(null);
     const [hasNextPage, setHasNextPage] = useState(true);
     const [isLoading, setIsLoading] = useState(false);
+
+    // Animation values
+    const translateX = useSharedValue(0);
+    const translateY = useSharedValue(0);
+
+    useImperativeHandle(ref, () => ({
+        swipeLeft: () => triggerSwipeLeft(),
+        swipeRight: () => triggerSwipeRight(),
+    }));
+
+    // Reset position helper
+    const resetPosition = () => {
+        translateX.value = 0;
+        translateY.value = 0;
+    };
+
+    // Action handlers (JS thread)
+    const handleAction = async (deletePhoto) => {
+        if (!photos || photos.length === 0 || currentIndex >= photos.length) return;
+        const currentPhoto = photos[currentIndex];
+
+        setCurrentIndex(prev => prev + 1);
+        resetPosition();
+
+        if (deletePhoto) {
+            await moveToTrash(currentPhoto);
+        }
+    };
+
+    // Programmatic triggers
+    const triggerSwipeLeft = () => {
+        translateX.value = withTiming(-SCREEN_WIDTH * 1.5, {}, () => {
+            runOnJS(handleAction)(true);
+        });
+    };
+
+    const triggerSwipeRight = () => {
+        translateX.value = withTiming(SCREEN_WIDTH * 1.5, {}, () => {
+            runOnJS(handleAction)(false);
+        });
+    };
+
+    // Gesture definition
+    const panGesture = Gesture.Pan()
+        .onUpdate((event) => {
+            translateX.value = event.translationX;
+            translateY.value = event.translationY;
+        })
+        .onEnd(() => {
+            if (translateX.value < -SWIPE_THRESHOLD) {
+                // Swipe Left (Delete)
+                translateX.value = withSpring(-SCREEN_WIDTH * 1.5, {}, () => {
+                    runOnJS(handleAction)(true);
+                });
+            } else if (translateX.value > SWIPE_THRESHOLD) {
+                // Swipe Right (Keep)
+                translateX.value = withSpring(SCREEN_WIDTH * 1.5, {}, () => {
+                    runOnJS(handleAction)(false);
+                });
+            } else {
+                // Return to center
+                translateX.value = withSpring(0);
+                translateY.value = withSpring(0);
+            }
+        });
+
+    // Animated styles
+    const animatedCardStyle = useAnimatedStyle(() => {
+        const rotate = interpolate(
+            translateX.value,
+            [-SCREEN_WIDTH / 2, 0, SCREEN_WIDTH / 2],
+            [-10, 0, 10], // degrees
+            Extrapolation.CLAMP
+        );
+
+        return {
+            transform: [
+                { translateX: translateX.value },
+                { translateY: translateY.value },
+                { rotate: `${rotate}deg` },
+            ],
+        };
+    });
 
     async function loadPhotos(cursor = null) {
         if (isLoading || !hasNextPage) return;
@@ -66,6 +163,14 @@ const CardStack = () => {
     const currentPhoto = photos[currentIndex];
     const nextPhoto = photos[currentIndex + 1] || null;
 
+    if (!currentPhoto) {
+        return (
+            <View style={styles.centerContainer}>
+                <Text>No hay más fotos</Text>
+            </View>
+        );
+    }
+
     return (
         <View style={styles.container}>
             {nextPhoto && (
@@ -80,18 +185,20 @@ const CardStack = () => {
                 </View>
             )}
 
-            <View style={styles.cardContainer}>
-                <ImageCard
-                    image={{ uri: currentPhoto.uri }}
-                    title={currentPhoto.filename}
-                    subtitle={new Date(currentPhoto.creationTime).toLocaleDateString()}
-                    mediaType={currentPhoto.mediaType}
-                    isActive={true}
-                />
-            </View>
+            <GestureDetector gesture={panGesture}>
+                <Animated.View style={[styles.cardContainer, animatedCardStyle]}>
+                    <ImageCard
+                        image={{ uri: currentPhoto.uri }}
+                        title={currentPhoto.filename}
+                        subtitle={new Date(currentPhoto.creationTime).toLocaleDateString()}
+                        mediaType={currentPhoto.mediaType}
+                        isActive={true}
+                    />
+                </Animated.View>
+            </GestureDetector>
         </View>
     );
-};
+});
 
 const styles = StyleSheet.create({
     container: {

@@ -4,17 +4,25 @@ import LogoText from '../assets/Icons/Logos/LogoText.png';
 import CardStack from '../components/CardStack';
 
 const HomeScreen = () => {
+  const cardStackRef = React.useRef();
+
   return (
     <View style={styles.container}>
       <View style={styles.topIcon}>
         <Image style={{ width: 120, height: 40 }} source={LogoText} />
       </View>
-      <CardStack />
+      <CardStack ref={cardStackRef} />
       <View style={styles.buttonsContainer}>
-        <TouchableOpacity style={styles.button} onPress={() => console.log('Left')}>
+        <TouchableOpacity
+          style={styles.button}
+          onPress={() => cardStackRef.current?.swipeLeft()}
+        >
           <Text style={styles.buttonText}>❌</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.button} onPress={() => console.log('Right')}>
+        <TouchableOpacity
+          style={styles.button}
+          onPress={() => cardStackRef.current?.swipeRight()}
+        >
           <Text style={styles.buttonText}>💚</Text>
         </TouchableOpacity>
       </View>

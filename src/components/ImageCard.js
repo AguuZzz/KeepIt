@@ -1,10 +1,32 @@
 import React from 'react';
-import { View, Text, Image, StyleSheet } from 'react-native';
+import { View, Text, Image, StyleSheet, useWindowDimensions } from 'react-native';
+import { Video, ResizeMode } from 'expo-av';
 
-const ImageCard = ({ image, title, subtitle }) => {
+const ImageCard = ({ image, title, subtitle, mediaType, isActive }) => {
+    const { width, height } = useWindowDimensions();
+    const isLandscape = width > height;
+
+    const dynamicCardStyle = {
+        width: isLandscape ? '60%' : '85%',
+        height: isLandscape ? '75%' : '70%',
+    };
+
+    const isVideo = mediaType === 'video';
+
     return (
-        <View style={styles.card}>
-            <Image source={image} style={styles.image} />
+        <View style={[styles.card, dynamicCardStyle]}>
+            {isVideo ? (
+                <Video
+                    source={image}
+                    style={styles.image}
+                    resizeMode={ResizeMode.COVER}
+                    isLooping
+                    shouldPlay={isActive}
+                    isMuted={true}
+                />
+            ) : (
+                <Image source={image} style={styles.image} />
+            )}
 
             <View style={styles.overlay}>
                 <Text style={styles.title}>{title}</Text>
@@ -18,11 +40,10 @@ export default ImageCard;
 
 const styles = StyleSheet.create({
     card: {
-        height: '70%',
-        width: '85%',
         borderRadius: 16,
         overflow: 'hidden',
         position: 'relative',
+        backgroundColor: '#000',
     },
 
     image: {

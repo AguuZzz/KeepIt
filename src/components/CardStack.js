@@ -25,7 +25,7 @@ const CardStack = () => {
             }
 
             const assets = await MediaLibrary.getAssetsAsync({
-                mediaType: 'photo',
+                mediaType: ['photo', 'video'],
                 first: 100,
                 after: cursor,
                 sortBy: ['creationTime'],
@@ -74,6 +74,8 @@ const CardStack = () => {
                         image={{ uri: nextPhoto.uri }}
                         title={nextPhoto.filename}
                         subtitle={new Date(nextPhoto.creationTime).toLocaleDateString()}
+                        mediaType={nextPhoto.mediaType}
+                        isActive={false}
                     />
                 </View>
             )}
@@ -83,6 +85,8 @@ const CardStack = () => {
                     image={{ uri: currentPhoto.uri }}
                     title={currentPhoto.filename}
                     subtitle={new Date(currentPhoto.creationTime).toLocaleDateString()}
+                    mediaType={currentPhoto.mediaType}
+                    isActive={true}
                 />
             </View>
         </View>

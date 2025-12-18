@@ -1,5 +1,6 @@
 import React from 'react';
-import { View, Text, StyleSheet, Image, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, Image } from 'react-native';
+import { TouchableOpacity } from 'react-native-gesture-handler';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import LogoText from '../assets/Icons/Logos/LogoText.png';
 import CardStack from '../components/CardStack';
@@ -87,6 +88,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     paddingHorizontal: 50,
+    zIndex: 10,
   },
   button: {
     backgroundColor: 'white',

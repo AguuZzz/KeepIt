@@ -147,7 +147,7 @@ const CardStack = forwardRef(({ onSwipe, ...props }, ref) => {
 
             let options = {
                 mediaType: ['photo', 'video'],
-                first: 50,
+                first: 3,
             };
 
             if (Platform.OS === 'android') {
@@ -156,8 +156,8 @@ const CardStack = forwardRef(({ onSwipe, ...props }, ref) => {
                     first: 0
                 });
 
-                if (totalAssets.totalCount > 50) {
-                    const randomOffset = Math.floor(Math.random() * (totalAssets.totalCount - 50));
+                if (totalAssets.totalCount > 3) {
+                    const randomOffset = Math.floor(Math.random() * (totalAssets.totalCount - 3));
                     options.after = String(randomOffset);
                 }
             } else if (cursor) {

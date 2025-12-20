@@ -39,7 +39,7 @@ La app se **dirige** a:
 ## TO-DO
 
 * [ ] **Selección** de carpetas
-* [ ] Papelera de reciclaje
+* [x] Papelera de reciclaje
 * [ ] Modo oscuro
 * [ ] **Inglés** / otros idiomas
 
